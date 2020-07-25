@@ -14,7 +14,7 @@ banner()
 
 usage()
 {
-  banner;
+  banner
   echo "Usage: $0 [Options]:
     -a, --list-all    List all countries
     -c, --country     Specific a country
@@ -26,18 +26,26 @@ usage()
 main()
 {
   if [ $# -lt 1 ]; then
-    usage;
+    usage
+  fi
+
+  if [ "$listall" == true ]; then
+      alldata=$(curl -X GET "https://disease.sh/v3/covid-19/countries" -H "accept: application/json")
+      echo $alldata | jq -r '(["Country", "Cases", "Deaths", "Recovered"] | (., map(length*"-"))), (.[] | [.country, .cases, .deaths, .recovered]) | @csv' | column -t -s ","
   fi
 }
 
 while test $# -gt 0; do
   case "$1" in
+    -a|--list-all)
+    shift
+    listall=true
+    ;;
     -n|--no-banner)
     shift
     nobanner=true
     ;;
   esac
-  shift;
 done
 
-main;
+main
