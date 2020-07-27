@@ -1,5 +1,11 @@
 #!/bin/bash
 
+check_dependencies()
+{
+  type jq >/dev/null 2>&1 || { echo >&2 "jq is not installed. https://stedolan.github.io/jq/"; exit 1; }
+  type curl >/dev/null 2>&1 || {  echo >&2 "curl is not installed. https://stedolan.github.io/jq/"; exit 1; }
+}
+
 banner()
 {
   if [ "$nobanner" != true ]; then
@@ -61,6 +67,8 @@ main()
     echo $res | jq -r '(["cases", "deaths", "recovered"] | (., map(length*"-"))), ([.cases, .deaths, .recovered]) | @csv' | column -t -s ","
   fi
 }
+
+check_dependencies
 
 if [ $# -eq 0 ]; then
   usage
