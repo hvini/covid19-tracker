@@ -15,19 +15,21 @@ banner()
 usage()
 {
 echo "usage: $0 [options]:
-  
-  command           description
-  -------           -----------
-  -a, --list-all    list statics for all countries
-  -c, --country     list statics for an specific country
-  -h, --help        open the help menu
-  -n, --no-banner   hide the /covid19/ banner
+  common options:
+    -a, --list-all    list statistics for all countries
+    -c, --country     list statistics for an specific country
+    -g, --global      list global statistics
+    -h, --help        open the help menu
+    -n, --no-banner   hide the /covid19/ banner
+  examples:
+    ./covid -c brazil
+    ./covid --global
   "
 }
 
 main()
 {
-  url="https://disease.sh/v3/covid-19/countries"
+  url="https://disease.sh/v3/covid-19"
 
   if [ "$listall" == true ] && [ ! -z "$country" ]; then
     echo "list all and country cannot be mixed!"
@@ -35,22 +37,28 @@ main()
   elif [ "$listall" == true ]; then
     banner
     echo ""
-    res=$(curl --progress-bar -X GET "$url" -H "accept: application/json")
+    res=$(curl --progress-bar -X GET "$url/countries" -H "accept: application/json")
     echo ""
     echo $res | jq -r '(["country", "cases", "deaths", "recovered"] | (., map(length*"-"))), (.[] | [.country, .cases, .deaths, .recovered]) | @csv' | column -t -s ","
   
-  elif [ ! -z "$country" ]; then
+  elif [ -n "$country" ]; then
     banner
     echo "country: $country"
     echo ""
-    res=$(curl --fail --progress-bar -X GET "$url/$country" -H "accept: application/json")
+    res=$(curl --fail --progress-bar -X GET "$url/countries/$country" -H "accept: application/json")
     echo ""
     echo $res | jq -r '(["country", "cases", "deaths", "recovered"] | (., map(length*"-"))), ([.country, .cases, .deaths, .recovered]) | @csv' | column -t -s ","
   
   elif [ "$help" == true ]; then
     banner
     usage
-  
+
+  elif [ "$global" == true ]; then
+    banner
+    echo ""
+    res=$(curl --fail --progress-bar -X GET "$url/all" -H "accept: application/json")
+    echo ""
+    echo $res | jq -r '(["cases", "deaths", "recovered"] | (., map(length*"-"))), ([.cases, .deaths, .recovered]) | @csv' | column -t -s ","
   fi
 }
 
@@ -65,6 +73,9 @@ while test $# -gt 0; do
     ;;
     -c|--country)
     country="$2"
+    ;;
+    -g|--global)
+    global=true
     ;;
     -h|--help)
     help=true
