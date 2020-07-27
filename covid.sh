@@ -21,16 +21,27 @@ banner()
 usage()
 {
 echo "usage: $0 [options]:
-  common options:
-    -a, --list-all    list statistics for all countries
-    -c, --country     list statistics for an specific country
-    -g, --global      list global statistics
-    -h, --help        open the help menu
-    -n, --no-banner   hide the /covid19/ banner
-  examples:
-    ./covid -c brazil
-    ./covid --global
+
+Copyright (c) 2020 hvini. Permission to include in application software
+or to make digital or hard copies of part or all of this work is subject to the MIT License agreement.
+https://github.com/hvini/covid19-tracker
+
+common options:
+  -a, --list-all    list statistics for all countries
+  -c, --country     list statistics for an specific country
+  -g, --global      list global statistics
+  -h, --help        open the help menu
+  -n, --no-banner   hide the /covid19/ banner
+examples:
+  ./covid.sh -c brazil
+  ./covid.sh --global
   "
+}
+
+err()
+{
+  echo "Error: $@"
+  exit 1;
 }
 
 main()
@@ -38,7 +49,7 @@ main()
   url="https://disease.sh/v3/covid-19"
 
   if [ "$listall" == true ] && [ ! -z "$country" ]; then
-    echo "list all and country cannot be mixed!"
+    err "list all and country cannot be mixed!"
 
   elif [ "$listall" == true ]; then
     banner
