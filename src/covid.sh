@@ -38,7 +38,7 @@ common options:
   -n,  --no-banner     Hide the /covid19/ banner.
 examples:
   ./covid.sh -a -c brazil
-  ./covid.sh -hI -c brazil
+  ./covid.sh -hI -c brazil -d all
   ./covid.sh --global
   "
 }
@@ -65,6 +65,12 @@ exceptions()
 
   elif [ "$global" == true ] && [ "$historical" == true ]; then
     err "-g|--global and -hI|--historical cannot be mixed!"
+
+  elif [ "$listall" == true ] && [ "$days" == true ]; then
+    err "-a|--listall and -d|--days cannot be mixed!"
+
+  elif [ "$global" == true ] && [ "$days" == true ]; then
+    err "-g|--global and -d|--days cannot be mixed"
   fi
 }
 
@@ -89,7 +95,7 @@ main()
     echo ""
     echo $res | jq -r '(["country", "cases", "deaths", "recovered"] | (., map(length*"-"))), ([.country, .cases, .deaths, .recovered]) | @csv' | column -t -s ","
   
-  elif [ -z "$country" ] && [ "$historical" == true ]; then
+  elif [ -z "$country" ] && [ "$historical" == true ] && [ -z "$nodays" ]; then
     banner
     printf "global\n\n"
 
@@ -98,12 +104,25 @@ main()
     cases=$(echo $res | jq -r '.cases' | jq '.[]')
     deaths=$(echo $res | jq -r '.deaths' | jq '.[]')
     recovered=$(echo $res | jq -r '.recovered' | jq '.[]')
-
+    
     printf "\ncases: $(spark ${cases})\n\n"
     printf "deaths: $(spark ${deaths})\n\n"
     printf "recovered: $(spark ${recovered})\n\n"
+  
+  elif [ -z "$country" ] && [ "$historical" == true ] && [ -n "$nodays" ]; then
+    (banner
 
-  elif [ -n "$country" ] && [ "$historical" == true ]; then
+    res=$(curl --progress-bar -X GET "$url/historical/all?lastdays=$nodays" -H "accept: application/json")
+
+    cases=$(echo $res | jq -r '.cases' | jq '.[]')
+    deaths=$(echo $res | jq -r '.deaths' | jq '.[]')
+    recovered=$(echo $res | jq -r '.recovered' | jq '.[]')
+
+    printf "\ncases: $(spark ${cases})\n\n"
+    printf "deaths: $(spark ${deaths})\n\n"
+    printf "recovered: $(spark ${recovered})\n\n") | less -S
+
+  elif [ -n "$country" ] && [ "$historical" == true ] && [ -z "$nodays" ]; then
     banner
     printf "country: ${country}\n\n"
 
@@ -116,6 +135,20 @@ main()
     printf "\ncases: $(spark ${cases})\n\n"
     printf "deaths: $(spark ${deaths})\n\n"
     printf "recovered: $(spark ${recovered})\n\n"
+
+  elif [ -n "$country" ] && [ "$historical" == true ] && [ -n "$nodays" ]; then
+    (banner
+    printf "country: ${country}\n\n"
+
+    res=$(curl --progress-bar -X GET "$url/historical/$country?lastdays=$nodays" -H "accept: application/json")
+    
+    cases=$(echo $res | jq -r '.timeline.cases' | jq '.[]')
+    deaths=$(echo $res | jq -r '.timeline.deaths' | jq '.[]')
+    recovered=$(echo $res | jq -r '.timeline.recovered' | jq '.[]')
+
+    printf "\ncases: $(spark ${cases})\n\n"
+    printf "deaths: $(spark ${deaths})\n\n"
+    printf "recovered: $(spark ${recovered})\n\n") | less -S
 
   elif [ "$help" == true ]; then
     banner
@@ -147,6 +180,10 @@ while test $# -gt 0; do
     -c|--country)
     listcountry=true
     country="$2"
+    ;;
+    -d|--days)
+    days=true
+    nodays="$2"
     ;;
     -g|--global)
     global=true
