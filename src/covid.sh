@@ -27,14 +27,18 @@ or to make digital or hard copies of part or all of this work is subject to the 
 https://github.com/hvini/covid19-tracker
 
 common options:
-  -a,  --list-all      list all countries statistics for today and yesterday
-  -c,  --country       list statistics for an specific country
-  -g,  --global        list global statistics for today and yesterday
-  -h,  --help          open the help menu
-  -hI, --historical    list global historical { last 30 days } statistics
-  -n,  --no-banner     hide the /covid19/ banner
+  -a,  --list-all      List all countries statistics for today and yesterday.
+  -c,  --country       Filters an historical and non historical list by country.
+  -d,  --days          Filters an historical list by no. days { 15, 24, 30 or all }.
+  -g,  --global        List global statistics for today and yesterday.
+  -h,  --help          Open the help menu.
+  -hI, --historical    Shows sparklines graphs for no. cases, deaths and recovered,
+                       for global historical statistics. If a days filter is not entered,
+                       the default value for the listing will be for the last 30 days.
+  -n,  --no-banner     Hide the /covid19/ banner.
 examples:
-  ./covid.sh -c brazil
+  ./covid.sh -a -c brazil
+  ./covid.sh -hI -c brazil
   ./covid.sh --global
   "
 }
@@ -45,14 +49,32 @@ err()
   exit 1;
 }
 
+exceptions()
+{
+  if [ "$listall" == true ] && [ "$listcountry" == true ]; then
+    err "-a|--list-all and -c|--country cannot be mixed!"
+
+  elif [ "$listall" == true ] && [ "$global" == true ]; then
+    err "-a|--list-all and -g|--global cannot be mixed!"
+
+  elif [ "$listall"  == true ] && [ "$historical" == true ]; then
+    err "-a|--list-all and -hI|--historical cannot be mixed!"
+
+  elif [ "$global" == true ] && [ "$listcountry" == true ]; then
+    err "-g|--global and -c|--country cannot be mixed!"
+
+  elif [ "$global" == true ] && [ "$historical" == true ]; then
+    err "-g|--global and -hI|--historical cannot be mixed!"
+  fi
+}
+
 main()
 {
   url="https://disease.sh/v3/covid-19"
+  
+  exceptions
 
-  if [ "$listall" == true ] && [ -n "$country" ]; then
-    err "list all and country cannot be mixed!"
-
-  elif [ "$listall" == true ]; then
+  if [ "$listall" == true ]; then
     banner
     echo ""
     res=$(curl --progress-bar -X GET "$url/countries" -H "accept: application/json")
@@ -123,6 +145,7 @@ while test $# -gt 0; do
     listall=true
     ;;
     -c|--country)
+    listcountry=true
     country="$2"
     ;;
     -g|--global)
