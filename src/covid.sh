@@ -3,7 +3,7 @@
 check_dependencies()
 {
   type jq >/dev/null 2>&1 || { echo >&2 "jq is not installed. https://stedolan.github.io/jq/"; exit 1; }
-  type curl >/dev/null 2>&1 || {  echo >&2 "curl is not installed. https://stedolan.github.io/jq/"; exit 1; }
+  type curl >/dev/null 2>&1 || {  echo >&2 "curl is not installed. https://github.com/curl/curl"; exit 1; }
 }
 
 banner()
@@ -43,82 +43,93 @@ examples:
   "
 }
 
-err()
+error()
 {
-  echo "Error: $@"
+  printf "Error: $@"
   exit 1;
 }
 
 exceptions()
 {
   if [ "$listall" == true ] && [ "$listcountry" == true ]; then
-    err "-a|--list-all and -c|--country cannot be mixed!"
+    error "-a|--list-all and -c|--country cannot be mixed!\n"
 
   elif [ "$listall" == true ] && [ "$global" == true ]; then
-    err "-a|--list-all and -g|--global cannot be mixed!"
+    error "-a|--list-all and -g|--global cannot be mixed!\n"
 
   elif [ "$listall"  == true ] && [ "$historical" == true ]; then
-    err "-a|--list-all and -hI|--historical cannot be mixed!"
-
-  elif [ "$global" == true ] && [ "$listcountry" == true ]; then
-    err "-g|--global and -c|--country cannot be mixed!"
-
-  elif [ "$global" == true ] && [ "$historical" == true ]; then
-    err "-g|--global and -hI|--historical cannot be mixed!"
+    error "-a|--list-all and -hI|--historical cannot be mixed!\n"
 
   elif [ "$listall" == true ] && [ "$days" == true ]; then
-    err "-a|--listall and -d|--days cannot be mixed!"
+    error "-a|--listall and -d|--days cannot be mixed!\n"
+
+  elif [ "$global" == true ] && [ "$listcountry" == true ]; then
+    error "-g|--global and -c|--country cannot be mixed!\n"
+
+  elif [ "$global" == true ] && [ "$historical" == true ]; then
+    error "-g|--global and -hI|--historical cannot be mixed!\n"
 
   elif [ "$global" == true ] && [ "$days" == true ]; then
-    err "-g|--global and -d|--days cannot be mixed"
+    error "-g|--global and -d|--days cannot be mixed\n"
   fi
 }
 
 main()
 {
-  url="https://disease.sh/v3/covid-19"
-  
+  BASE_URL="https://disease.sh/v3/covid-19"
+  ALLCOUNTRIES_URL="$BASE_URL/countries"
+  HISTORICAL_URL="$BASE_URL/historical"
+
   exceptions
 
   if [ "$listall" == true ]; then
     banner
-    echo ""
-    res=$(curl --progress-bar -X GET "$url/countries" -H "accept: application/json")
-    echo ""
-    echo $res | jq -r '(["country", "cases", "deaths", "recovered"] | (., map(length*"-"))), (.[] | [.country, .cases, .deaths, .recovered]) | @csv' | column -t -s ","
+    printf "Listing all countries statistics\n\n"
+
+    data=$(curl -s -X GET "$ALLCOUNTRIES_URL" -H "accept: application/json")
+    res=$(echo $data | jq -r '(["country", "cases", "deaths", "recovered"] | (., map(length*"-"))), (.[] | [.country, .cases, .deaths, .recovered]) | @csv' | column -t -s ",")
+    
+    printf "${res}\n"
   
   elif [ -n "$country" ] && [ -z "$historical" ]; then
     banner
-    echo "country: $country"
-    echo ""
-    res=$(curl --fail --progress-bar -X GET "$url/countries/$country" -H "accept: application/json")
-    echo ""
-    echo $res | jq -r '(["country", "cases", "deaths", "recovered"] | (., map(length*"-"))), ([.country, .cases, .deaths, .recovered]) | @csv' | column -t -s ","
+    printf "country: $country\n\n"
+
+    data=$(curl --fail -Ss -X GET "$ALLCOUNTRIES_URL/$country" -H "accept: application/json")
+    
+    cases=$(echo $data | jq ".cases")
+    deaths=$(echo $data | jq ".deaths")
+    recovered=$(echo $data | jq ".recovered")
+
+    printf "${yellow}cases:${reset} ${cases}\t"
+    printf "${red}deaths:${reset} ${deaths}\t"
+    printf "${green}recovered:${reset} ${recovered}\t\n"
   
   elif [ -z "$country" ] && [ "$historical" == true ] && [ -z "$nodays" ]; then
     banner
-    printf "global\n\n"
+    printf "Sparkline for global historical statistics\n\n"
 
-    res=$(curl --progress-bar -X GET "$url/historical/all" -H "accept: application/json")
-
-    cases=$(echo $res | jq -r '.cases' | jq '.[]')
-    deaths=$(echo $res | jq -r '.deaths' | jq '.[]')
-    recovered=$(echo $res | jq -r '.recovered' | jq '.[]')
+    data=$(curl -s -X GET "$HISTORICAL_URL/all" -H "accept: application/json")
     
-    printf "\ncases: $(spark ${cases})\n\n"
+    cases=$(echo $data | jq -r '.cases' | jq '.[]')
+    deaths=$(echo $data | jq -r '.deaths' | jq '.[]')
+    recovered=$(echo $data | jq -r '.recovered' | jq '.[]')
+    
+    printf "cases: $(spark ${cases})\n\n"
     printf "deaths: $(spark ${deaths})\n\n"
     printf "recovered: $(spark ${recovered})\n\n"
   
   elif [ -z "$country" ] && [ "$historical" == true ] && [ -n "$nodays" ]; then
     (banner
+    printf "Listing global historical statistics\n\n"
 
-    res=$(curl --progress-bar -X GET "$url/historical/all?lastdays=$nodays" -H "accept: application/json")
+    data=$(curl -s -X GET "$HISTORICAL_URL/all?lastdays=$nodays" -H "accept: application/json")
+    
+    cases=$(echo $data | jq -r '.cases' | jq '.[]')
+    deaths=$(echo $data | jq -r '.deaths' | jq '.[]')
+    recovered=$(echo $data | jq -r '.recovered' | jq '.[]')
 
-    cases=$(echo $res | jq -r '.cases' | jq '.[]')
-    deaths=$(echo $res | jq -r '.deaths' | jq '.[]')
-    recovered=$(echo $res | jq -r '.recovered' | jq '.[]')
-
-    printf "\ncases: $(spark ${cases})\n\n"
+    printf "cases: $(spark ${cases})\n\n"
     printf "deaths: $(spark ${deaths})\n\n"
     printf "recovered: $(spark ${recovered})\n\n") | less -S
 
@@ -126,13 +137,13 @@ main()
     banner
     printf "country: ${country}\n\n"
 
-    res=$(curl --progress-bar -X GET "$url/historical/$country" -H "accept: application/json")
+    data=$(curl -s -X GET "$HISTORICAL_URL/$country" -H "accept: application/json")
     
-    cases=$(echo $res | jq -r '.timeline.cases' | jq '.[]')
-    deaths=$(echo $res | jq -r '.timeline.deaths' | jq '.[]')
-    recovered=$(echo $res | jq -r '.timeline.recovered' | jq '.[]')
+    cases=$(echo $data | jq -r '.timeline.cases' | jq '.[]')
+    deaths=$(echo $data | jq -r '.timeline.deaths' | jq '.[]')
+    recovered=$(echo $data | jq -r '.timeline.recovered' | jq '.[]')
 
-    printf "\ncases: $(spark ${cases})\n\n"
+    printf "cases: $(spark ${cases})\n\n"
     printf "deaths: $(spark ${deaths})\n\n"
     printf "recovered: $(spark ${recovered})\n\n"
 
@@ -140,13 +151,13 @@ main()
     (banner
     printf "country: ${country}\n\n"
 
-    res=$(curl --progress-bar -X GET "$url/historical/$country?lastdays=$nodays" -H "accept: application/json")
+    data=$(curl -s -X GET "$HISTORICAL_URL/$country?lastdays=$nodays" -H "accept: application/json")
     
-    cases=$(echo $res | jq -r '.timeline.cases' | jq '.[]')
-    deaths=$(echo $res | jq -r '.timeline.deaths' | jq '.[]')
-    recovered=$(echo $res | jq -r '.timeline.recovered' | jq '.[]')
+    cases=$(echo $data | jq -r '.timeline.cases' | jq '.[]')
+    deaths=$(echo $data | jq -r '.timeline.deaths' | jq '.[]')
+    recovered=$(echo $data | jq -r '.timeline.recovered' | jq '.[]')
 
-    printf "\ncases: $(spark ${cases})\n\n"
+    printf "cases: $(spark ${cases})\n\n"
     printf "deaths: $(spark ${deaths})\n\n"
     printf "recovered: $(spark ${recovered})\n\n") | less -S
 
@@ -156,22 +167,38 @@ main()
 
   elif [ "$global" == true ]; then
     banner
-    echo ""
-    res=$(curl --progress-bar -X GET "$url/all" -H "accept: application/json")
-    echo ""
-    echo $res | jq -r '(["cases", "deaths", "recovered"] | (., map(length*"-"))), ([.cases, .deaths, .recovered]) | @csv' | column -t -s ","
+    printf "Listing global statistics\n\n"
+
+    data=$(curl -s -X GET "$BASE_URL/all" -H "accept: application/json")
+    
+    cases=$(echo $data | jq ".cases")
+    deaths=$(echo $data | jq ".deaths")
+    recovered=$(echo $data | jq ".recovered")
+    
+    printf "${yellow}cases:${reset} ${cases}\t"
+    printf "${red}deaths:${reset} ${deaths}\t"
+    printf "${green}recovered:${reset} ${recovered}\t\n"
   fi
 }
 
 basedir=$( cd `dirname $0`; pwd )
 source ${basedir}/libs/spark
 
-check_dependencies
+# colors
+green=`tput setaf 2`
+red=`tput setaf 1`
+reset=`tput sgr0`
+yellow=`tput setaf 3`
 
+# shows usage menu if no parameter are entered
 if [ $# -eq 0 ]; then
   usage
 fi
 
+# checking if all needed dependencies are installed
+check_dependencies
+
+# getting the input flags
 while test $# -gt 0; do
   case "$1" in
     -a|--list-all)
