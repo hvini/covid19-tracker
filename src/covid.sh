@@ -206,11 +206,13 @@ while test $# -gt 0; do
     ;;
     -c|--country)
     listcountry=true
-    country="$2"
+    shift
+    country="$1"
     ;;
     -d|--days)
     days=true
-    nodays="$2"
+    shift
+    nodays="$1"
     ;;
     -g|--global)
     global=true
@@ -224,6 +226,9 @@ while test $# -gt 0; do
     -n|--no-banner)
     nobanner=true
     ;;
+    *)
+    printf "Invalid command '$1'\n"
+    exit 1
   esac
   shift
 done
