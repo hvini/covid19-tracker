@@ -36,6 +36,8 @@ common options:
                        for global historical statistics. If a days filter is not entered,
                        the default value for the listing will be for the last 30 days.
   -n,  --no-banner     Hide the /covid19/ banner.
+  -s,  --sort          Sort all countries list from greatest to least, by given a key 
+                       {cases, deaths, recovered}
 examples:
   ./covid.sh -a -c brazil
   ./covid.sh -hI -c brazil -d all
@@ -49,28 +51,45 @@ error()
   exit 1;
 }
 
-exceptions()
+all_countries_exceptions()
 {
   if [ "$listall" == true ] && [ "$listcountry" == true ]; then
-    error "-a|--list-all and -c|--country cannot be mixed!\n"
+    error "You cannot filter by country an all countries listing!\n"
 
   elif [ "$listall" == true ] && [ "$global" == true ]; then
-    error "-a|--list-all and -g|--global cannot be mixed!\n"
+    error "You cannot use an global listing with an all countries listing!\n"
 
   elif [ "$listall"  == true ] && [ "$historical" == true ]; then
-    error "-a|--list-all and -hI|--historical cannot be mixed!\n"
+    error "You cannot use an historical listing with an all countries listing!\n"
 
   elif [ "$listall" == true ] && [ "$days" == true ]; then
-    error "-a|--listall and -d|--days cannot be mixed!\n"
+    error "You cannot use a day filter with an all countries listing!\n"
+  fi
+}
 
-  elif [ "$global" == true ] && [ "$listcountry" == true ]; then
-    error "-g|--global and -c|--country cannot be mixed!\n"
+global_exceptions()
+{
+  if [ "$global" == true ] && [ "$listcountry" == true ]; then
+    error "You cannot filter by country an global listing!\n"
 
   elif [ "$global" == true ] && [ "$historical" == true ]; then
-    error "-g|--global and -hI|--historical cannot be mixed!\n"
+    error "You cannot use an global listing with an historical!\n"
 
   elif [ "$global" == true ] && [ "$days" == true ]; then
-    error "-g|--global and -d|--days cannot be mixed\n"
+    error "You cannot use a day filter with an global listing!\n"
+  fi
+}
+
+sort_exceptions()
+{
+  if [ "$sort" == true ] && [ "$country" == true ]; then
+    error "You cannot sort an filtered listing!\n"
+
+  elif [ "$sort" == true ] && [ "$global" == true ]; then
+    error "You cannot sort an global listing!\n"
+
+  elif [ "$sort" == true ] && [ "$historical" == true ]; then
+    error "You cannot sort an historical listing!\n"
   fi
 }
 
@@ -80,13 +99,20 @@ main()
   ALLCOUNTRIES_URL="$BASE_URL/countries"
   HISTORICAL_URL="$BASE_URL/historical"
 
-  exceptions
+  all_countries_exceptions
+  global_exceptions
+  sort_exceptions
 
   if [ "$listall" == true ]; then
     banner
     printf "Listing all countries statistics\n"
-    printf "Please, wait while the data is fetched, may take a while\n\n"
-    data=$(curl -s -X GET "$ALLCOUNTRIES_URL" -H "accept: application/json")
+    
+    if [ -n "$sortby" ]; then
+      printf "sorted by '$sortby'\n"
+    fi
+
+    printf "\nPlease, wait while the data is fetched, may take a while\n"
+    data=$(curl -s -X GET "$ALLCOUNTRIES_URL/?sort=$sortby" -H "accept: application/json")
     
     res=$(echo $data | jq -r '("country, population, cases, deaths, recovered"), (.[] | "\(.country), \(.population), \(.cases), \(.deaths), \(.recovered)")')
     printTable "," "$res"
@@ -226,6 +252,11 @@ while test $# -gt 0; do
     ;;
     -n|--no-banner)
     nobanner=true
+    ;;
+    -s|--sort)
+    sort=true
+    shift
+    sortby="$1"
     ;;
     *)
     printf "Invalid command '$1'\n"
