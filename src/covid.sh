@@ -84,12 +84,12 @@ main()
 
   if [ "$listall" == true ]; then
     banner
-    printf "Listing all countries statistics\n\n"
-
+    printf "Listing all countries statistics\n"
+    printf "Please, wait while the data is fetched, may take a while\n\n"
     data=$(curl -s -X GET "$ALLCOUNTRIES_URL" -H "accept: application/json")
-    res=$(echo $data | jq -r '(["country", "cases", "deaths", "recovered"] | (., map(length*"-"))), (.[] | [.country, .cases, .deaths, .recovered]) | @csv' | column -t -s ",")
     
-    printf "${res}\n"
+    res=$(echo $data | jq -r '("country, population, cases, deaths, recovered"), (.[] | "\(.country), \(.population), \(.cases), \(.deaths), \(.recovered)")')
+    printTable "," "$res"
   
   elif [ -n "$country" ] && [ -z "$historical" ]; then
     banner
@@ -183,6 +183,7 @@ main()
 
 basedir=$( cd `dirname $0`; pwd )
 source ${basedir}/libs/spark
+. ${basedir}/libs/util.bash
 
 # colors
 green=`tput setaf 2`
