@@ -129,9 +129,9 @@ main()
     deaths=$(echo $data | jq ".deaths")
     recovered=$(echo $data | jq ".recovered")
 
-    printf "${yellow}cases:${reset} ${cases}\t"
-    printf "${red}deaths:${reset} ${deaths}\t"
-    printf "${green}recovered:${reset} ${recovered}\t\n"
+    printf "${blue}cases:${reset} ${cases}\n"
+    printf "${blue}deaths:${reset} ${deaths}\n"
+    printf "${blue}recovered:${reset} ${recovered}\n"
   
   elif [ -z "$country" ] && [ "$historical" == true ] && [ -z "$nodays" ]; then
     banner
@@ -143,9 +143,9 @@ main()
     deaths=$(echo $data | jq -r '.deaths' | jq '.[]')
     recovered=$(echo $data | jq -r '.recovered' | jq '.[]')
     
-    printf "cases: $(spark ${cases})\n\n"
-    printf "deaths: $(spark ${deaths})\n\n"
-    printf "recovered: $(spark ${recovered})\n\n"
+    printf "${blue}cases:${reset} $(spark ${cases})\n\n"
+    printf "${blue}deaths:${reset} $(spark ${deaths})\n\n"
+    printf "${blue}recovered:${reset} $(spark ${recovered})\n\n"
   
   elif [ -z "$country" ] && [ "$historical" == true ] && [ -n "$nodays" ]; then
     (banner
@@ -157,9 +157,13 @@ main()
     deaths=$(echo $data | jq -r '.deaths' | jq '.[]')
     recovered=$(echo $data | jq -r '.recovered' | jq '.[]')
 
-    printf "cases: $(spark ${cases})\n\n"
-    printf "deaths: $(spark ${deaths})\n\n"
-    printf "recovered: $(spark ${recovered})\n\n") | less -S
+    printf "${blue}cases:${reset} $(spark ${cases})\n\n"
+    printf "${blue}deaths:${reset} $(spark ${deaths})\n\n"
+    printf "${blue}recovered:${reset} $(spark ${recovered})\n\n"
+
+    printf "Tips:\n"
+    printf "Use the left or right arrow to horizontal scroll the screen\n"
+    printf "Press 'q' when done to quit\n\n") | less -S
 
   elif [ -n "$country" ] && [ "$historical" == true ] && [ -z "$nodays" ]; then
     banner
@@ -171,9 +175,9 @@ main()
     deaths=$(echo $data | jq -r '.timeline.deaths' | jq '.[]')
     recovered=$(echo $data | jq -r '.timeline.recovered' | jq '.[]')
 
-    printf "cases: $(spark ${cases})\n\n"
-    printf "deaths: $(spark ${deaths})\n\n"
-    printf "recovered: $(spark ${recovered})\n\n"
+    printf "${blue}cases:${reset} $(spark ${cases})\n\n"
+    printf "${blue}deaths:${reset} $(spark ${deaths})\n\n"
+    printf "${blue}recovered:${reset} $(spark ${recovered})\n\n"
 
   elif [ -n "$country" ] && [ "$historical" == true ] && [ -n "$nodays" ]; then
     (banner
@@ -185,9 +189,13 @@ main()
     deaths=$(echo $data | jq -r '.timeline.deaths' | jq '.[]')
     recovered=$(echo $data | jq -r '.timeline.recovered' | jq '.[]')
 
-    printf "cases: $(spark ${cases})\n\n"
-    printf "deaths: $(spark ${deaths})\n\n"
-    printf "recovered: $(spark ${recovered})\n\n") | less -S
+    printf "${blue}cases:${reset} $(spark ${cases})\n\n"
+    printf "${blue}deaths:${reset} $(spark ${deaths})\n\n"
+    printf "${blue}recovered:${reset} $(spark ${recovered})\n\n"
+    
+    printf "Tips:\n"
+    printf "Use the left or right arrow to horizontal scroll the screen\n"
+    printf "Press 'q' when done to quit\n\n") | less -S
 
   elif [ "$help" == true ]; then
     banner
@@ -203,9 +211,9 @@ main()
     deaths=$(echo $data | jq ".deaths")
     recovered=$(echo $data | jq ".recovered")
     
-    printf "${yellow}cases:${reset} ${cases}\t"
-    printf "${red}deaths:${reset} ${deaths}\t"
-    printf "${green}recovered:${reset} ${recovered}\t\n"
+    printf "${blue}cases:${reset} ${cases}\n"
+    printf "${blue}deaths:${reset} ${deaths}\n"
+    printf "${blue}recovered:${reset} ${recovered}\n"
   fi
 }
 
@@ -219,6 +227,7 @@ green=`tput setaf 2`
 red=`tput setaf 1`
 reset=`tput sgr0`
 yellow=`tput setaf 3`
+blue=`tput setaf 4`
 
 # shows usage menu if no parameter are entered
 if [ $# -eq 0 ]; then
