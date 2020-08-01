@@ -16,6 +16,7 @@ function printTable()
 
             for ((i = 1; i <= "${numberOfLines}"; i = i + 1))
             do
+                progressBar $i $numberOfLines
                 local line=''
                 line="$(sed "${i}q;d" <<< "${tableData}")"
 
@@ -60,7 +61,7 @@ function printTable()
                     echo -e "\033[1;32m$(head -n 3 <<< "${output}")\033[0m"
                     tail -n +4 <<< "${output}"
                 else
-                    echo "${output}"
+                    printf "\n${output}\n"
                 fi
             fi
         fi

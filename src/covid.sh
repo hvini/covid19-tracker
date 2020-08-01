@@ -10,38 +10,40 @@ banner()
 {
   if [ "$nobanner" != true ]; then
     echo "
-  ___  __   _  _  __  ____     __  ___  
- / __)/  \ / )( \(  )(    \   /  \/ _ \ 
-( (__(  O )\ \/ / )(  ) D (  (_/ /\__  )
- \___)\__/  \__/ (__)(____/   (__)(___/ 
+    ___  __   _  _  __  ____     __  ___  
+   / __)/  \ / )( \(  )(    \   /  \/ _ \ 
+  ( (__(  O )\ \/ / )(  ) D (  (_/ /\__  )
+   \___)\__/  \__/ (__)(____/   (__)(___/ 
     "
   fi
 }
 
 usage()
 {
-echo "usage: $0 [options]:
+  echo "
+  usage: $0 [options]:
 
-Copyright (c) 2020 hvini. Permission to include in application software
-or to make digital or hard copies of part or all of this work is subject to the MIT License agreement.
-https://github.com/hvini/covid19-tracker
+  Copyright (c) 2020 hvini. Permission to include in application software
+  or to make digital or hard copies of part or all of this work is subject to the MIT License agreement.
+  https://github.com/hvini/covid19-tracker
 
-common options:
-  -a,  --list-all      List all countries statistics for today and yesterday.
-  -c,  --country       Filters an historical and non historical list by country.
-  -d,  --days          Filters an historical list by no. days { 15, 24, 30 or all }.
-  -g,  --global        List global statistics for today and yesterday.
-  -h,  --help          Open the help menu.
-  -hI, --historical    Shows sparklines graphs for no. cases, deaths and recovered,
-                       for global historical statistics. If a days filter is not entered,
-                       the default value for the listing will be for the last 30 days.
-  -n,  --no-banner     Hide the /covid19/ banner.
-  -s,  --sort          Sort all countries list from greatest to least, by given a key 
-                       {cases, deaths, recovered}
-examples:
-  ./covid.sh -a -c brazil
-  ./covid.sh -hI -c brazil -d all
-  ./covid.sh --global
+  common options:
+    -a,  --list-all      List all countries statistics for today and yesterday.
+    -c,  --country       Filters an historical and non historical list by country.
+    -d,  --days          Filters an historical list by no. days { 15, 24, 30 or all }.
+    -g,  --global        List global statistics for today and yesterday.
+    -h,  --help          Open the help menu.
+    -hI, --historical    Shows sparklines graphs for no. cases, deaths and recovered,
+                        for global historical statistics. If a days filter is not entered,
+                        the default value for the listing will be for the last 30 days.
+    -n,  --no-banner     Hide the /covid19/ banner.
+    -s,  --sort          Sort all countries list from greatest to least, by given a key 
+                        {cases, deaths, recovered}
+  examples:
+    ./covid.sh -a -c brazil
+    ./covid.sh -hI -c brazil -d all
+    ./covid.sh --global
+    ./covid.sh --list-all -s deaths
   "
 }
 
@@ -108,13 +110,13 @@ main()
     printf "Listing all countries statistics\n"
     
     if [ -n "$sortby" ]; then
-      printf "sorted by '$sortby'\n"
+      printf "sorted by: '$sortby'\n"
     fi
 
     printf "\nPlease, wait while the data is fetched, may take a while\n"
     data=$(curl -s -X GET "$ALLCOUNTRIES_URL/?sort=$sortby" -H "accept: application/json")
-    
     res=$(echo $data | jq -r '("country, population, cases, deaths, recovered"), (.[] | "\(.country), \(.population), \(.cases), \(.deaths), \(.recovered)")')
+
     printTable "," "$res"
   
   elif [ -n "$country" ] && [ -z "$historical" ]; then
@@ -210,6 +212,7 @@ main()
 basedir=$( cd `dirname $0`; pwd )
 source ${basedir}/libs/spark
 . ${basedir}/libs/util.bash
+. ${basedir}/libs/progress.sh
 
 # colors
 green=`tput setaf 2`
