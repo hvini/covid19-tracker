@@ -21,29 +21,24 @@ banner()
 usage()
 {
   echo "
-  usage: $0 [options]:
-
-  Copyright (c) 2020 hvini. Permission to include in application software
-  or to make digital or hard copies of part or all of this work is subject to the MIT License agreement.
-  https://github.com/hvini/covid19-tracker
-
-  common options:
-    -a,  --list-all      List all countries statistics for today and yesterday.
-    -c,  --country       Filters an historical and non historical list by country.
-    -d,  --days          Filters an historical list by no. days { 15, 24, 30 or all }.
-    -g,  --global        List global statistics for today and yesterday.
-    -h,  --help          Open the help menu.
-    -hI, --historical    Shows sparklines graphs for no. cases, deaths and recovered,
+usage: $0 [options]:
+common options:
+  -a,  --list-all      List all countries statistics for today and yesterday.
+  -c,  --country       Filters an historical and non historical list by country.
+  -d,  --days          Filters an historical list by no. days { 15, 24, 30 or all }.
+  -g,  --global        List global statistics for today and yesterday.
+  -h,  --help          Open the help menu.
+  -hI, --historical    Shows sparklines graphs for no. cases, deaths and recovered,
                         for global historical statistics. If a days filter is not entered,
                         the default value for the listing will be for the last 30 days.
-    -n,  --no-banner     Hide the /covid19/ banner.
-    -s,  --sort          Sort all countries list from greatest to least, by given a key 
-                        {cases, deaths, recovered}
-  examples:
-    ./covid.sh -a -c brazil
-    ./covid.sh -hI -c brazil -d all
-    ./covid.sh --global
-    ./covid.sh --list-all -s deaths
+  -n,  --no-banner     Hide the /covid19/ banner.
+  -s,  --sort          Sort all countries list from greatest to least, by given a key 
+                        {cases, deaths, recovered}.
+examples:
+  ./covid.sh --list-all -s deaths
+  ./covid.sh -hI -c brazil -d all
+  ./covid.sh --country brazil
+  ./covid.sh -g
   "
 }
 
@@ -135,7 +130,7 @@ main()
   
   elif [ -z "$country" ] && [ "$historical" == true ] && [ -z "$nodays" ]; then
     banner
-    printf "Sparkline for global historical statistics\n\n"
+    printf "Listing global historical data { for the last 30 days }\n\n"
 
     data=$(curl -s -X GET "$HISTORICAL_URL/all" -H "accept: application/json")
     
@@ -149,7 +144,11 @@ main()
   
   elif [ -z "$country" ] && [ "$historical" == true ] && [ -n "$nodays" ]; then
     (banner
-    printf "Listing global historical statistics\n\n"
+    if [ "$nodays" != "all" ]; then
+      printf "Listing global historical data { for the last $nodays days }\n\n"
+    else
+      printf "Listing global historical data { since the pandemic began }\n\n"
+    fi
 
     data=$(curl -s -X GET "$HISTORICAL_URL/all?lastdays=$nodays" -H "accept: application/json")
     
@@ -181,6 +180,11 @@ main()
 
   elif [ -n "$country" ] && [ "$historical" == true ] && [ -n "$nodays" ]; then
     (banner
+    if [ "$nodays" != "all" ]; then
+      printf "Listing last $nodays days data\n"
+    else
+      printf "Listing data since the pandemic began\n"
+    fi
     printf "country: ${country}\n\n"
 
     data=$(curl -s -X GET "$HISTORICAL_URL/$country?lastdays=$nodays" -H "accept: application/json")
