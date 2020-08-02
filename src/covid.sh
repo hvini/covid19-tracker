@@ -10,10 +10,10 @@ banner()
 {
   if [ "$nobanner" != true ]; then
     echo "
-    ___  __   _  _  __  ____     __  ___  
+${blue}    ___  __   _  _  __  ____     __  ___  
    / __)/  \ / )( \(  )(    \   /  \/ _ \ 
-  ( (__(  O )\ \/ / )(  ) D (  (_/ /\__  )
-   \___)\__/  \__/ (__)(____/   (__)(___/ 
+  ( (__(  O )\ \/ / )(  ) D (  (_/ /\__  ) 
+   \___)\__/  \__/ (__)(____/   (__)(___/ ${reset}
     "
   fi
 }
@@ -227,11 +227,8 @@ source ${basedir}/libs/spark
 . ${basedir}/libs/progress.sh
 
 # colors
-green=`tput setaf 2`
-red=`tput setaf 1`
-reset=`tput sgr0`
-yellow=`tput setaf 3`
 blue=`tput setaf 4`
+reset=`tput sgr0`
 
 # shows usage menu if no parameter are entered
 if [ $# -eq 0 ]; then
